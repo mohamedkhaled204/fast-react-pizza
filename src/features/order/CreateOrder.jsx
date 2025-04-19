@@ -19,7 +19,11 @@ function CreateOrder() {
   const [withPriority, setWithPriority] = useState(false);
   const navigation = useNavigation();
   const isSubmitting = navigation.state === 'submitting';
-  const username =useSelector((state)=>state.user.username)
+  const {username,
+        position,
+        address,
+        error : addressError,
+        status: addressStatus} = useSelector((state)=>state.user) 
 
   const formErrors = useActionData();
   const dispatch = useDispatch();
@@ -27,7 +31,7 @@ function CreateOrder() {
   const totalPrice =useSelector(getCartTotalPrice);
   const bonus = withPriority ? totalPrice * 0.2 : 0;
   const finalPrice = totalPrice + bonus
-  
+  const isLoadingAddress = addressStatus === "loading";
   
   if(!cart.length) return <EmptyCart />
   return (
@@ -60,12 +64,21 @@ function CreateOrder() {
               type="text"
               name="address"
               required
+              disabled={isLoadingAddress}
+              defaultValue={address}
             />
-            <span className='absolute right-[3px] z-50'>
-              <Button type="small" onClick={(e)=>{
+            {addressStatus === "error" && (
+              <p className="mt-2 rounded-md bg-red-100 p-2 text-xs text-red-700">
+                {addressError}
+              </p>
+            )}
+            {!position.latitude && !position.longitude && <span className='absolute right-[3px] top-[5px] z-50'>
+              <Button type="small"
+              disabled={isLoadingAddress}
+              onClick={(e)=>{
                 e.preventDefault()
                 dispatch(fetchAddress())}}>Get Position</Button>
-            </span>
+            </span>}
           </div>
         </div>
 
@@ -85,7 +98,7 @@ function CreateOrder() {
 
         <div>
           <input type="hidden" name="cart" value={JSON.stringify(cart)} />
-          <Button disabled={isSubmitting} type="primary">
+          <Button disabled={isSubmitting||isLoadingAddress} type="primary">
             {isSubmitting ? 'Placing order....' : `Order now from ${formatCurrency(finalPrice)}`}
           </Button>
         </div>
